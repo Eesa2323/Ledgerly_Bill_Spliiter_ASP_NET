@@ -1,0 +1,6 @@
+@bill_splitter_asp_HostAddress = http://localhost:5246
+
+GET {{bill_splitter_asp_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

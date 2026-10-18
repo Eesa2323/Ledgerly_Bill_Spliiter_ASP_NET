@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <!-- The page is intentionally dependency-free so the API can serve it directly. -->
+        <meta charset="utf-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1"
+        />
+        <meta
+            name="theme-color"
+            content="#102a43"
+        />
+        <title>Ledgerly | Shared money, made clear</title>
+        <link
+            rel="stylesheet"
+            href="/styles.css"
+        />
+    </head>
+    <body>
+        <!-- A quiet background lets the financial data stay visually important. -->
+        <div class="app-shell">
+            <header class="topbar">
+                <a
+                    class="brand"
+                    href="/"
+                    aria-label="Ledgerly home"
+                >
+                    <span class="brand-mark">L</span>
+                    <span>ledgerly</span>
+                </a>
+                <div class="topbar-actions">
+                    <button
+                        id="notifications-button"
+                        class="button button-ghost hidden"
+                        type="button"
+                    >
+                        Notifications
+                        <span
+                            id="notification-count"
+                            class="notification-count"
+                            >0</span
+                        >
+                    </button>
+                    <span
+                        id="user-name"
+                        class="user-name"
+                    ></span>
+                    <button
+                        id="logout-button"
+                        class="button button-ghost hidden"
+                        type="button"
+                    >
+                        Log out
+                    </button>
+                </div>
+            </header>
+
+            <main>
+                <!-- Auth is the first screen for a new visitor. The dashboard replaces it after login. -->
+                <section
+                    id="auth-view"
+                    class="auth-layout"
+                >
+                    <div class="intro-panel">
+                        <p class="eyebrow">Shared finances, without the fog</p>
+                        <h1>Know what is owed. Know what is next.</h1>
+                        <p class="intro-copy">
+                            Ledgerly keeps group spending, budgets, and exchange rates in one calm
+                            workspace built for real-world money.
+                        </p>
+                        <div class="trust-row">
+                            <span>Decimal-safe amounts</span><span>JWT protected</span
+                            ><span>GBP ready</span>
+                        </div>
+                    </div>
+                    <div class="auth-card">
+                        <div
+                            class="tab-row"
+                            role="tablist"
+                            aria-label="Authentication mode"
+                        >
+                            <button
+                                class="tab is-active"
+                                data-auth-mode="login"
+                                type="button"
+                            >
+                                Sign in
+                            </button>
+                            <button
+                                class="tab"
+                                data-auth-mode="register"
+                                type="button"
+                            >
+                                Create account
+                            </button>
+                        </div>
+                        <form id="auth-form">
+                            <div class="field">
+                                <label for="username">Username</label>
+                                <input
+                                    id="username"
+                                    name="username"
+                                    pattern="[A-Za-z0-9_]{3,30}"
+                                    minlength="3"
+                                    maxlength="30"
+                                    autocomplete="username"
+                                    required
+                                />
+                            </div>
+                            <div
+                                id="email-field"
+                                class="field hidden"
+                            >
+                                <label for="email">Email</label>
+                                <input
+                                    id="email"
+                                    name="email"
+                                    type="email"
+                                    autocomplete="email"
+                                />
+                            </div>
+                            <div class="field">
+                                <label for="password">Password</label>
+                                <input
+                                    id="password"
+                                    name="password"
+                                    type="password"
+                                    minlength="10"
+                                    autocomplete="current-password"
+                                    required
+                                />
+                            </div>
+                            <button
+                                class="button button-primary button-full"
+                                type="submit"
+                            >
+                                <span id="auth-submit-label">Sign in</span
+                                ><span class="button-arrow">→</span>
+                            </button>
+                            <p
+                                id="auth-message"
+                                class="form-message"
+                                role="alert"
+                            ></p>
+                        </form>
+                    </div>
+                </section>
+
+                <section
+                    id="dashboard-view"
+                    class="dashboard hidden"
+                >
+                    <div class="dashboard-heading">
+                        <div>
+                            <p class="eyebrow">Your money, in one view</p>
+                            <h1>Good to see you, <span id="heading-name">there</span>.</h1>
+                        </div>
+                        <button
+                            id="refresh-button"
+                            class="button button-light"
+                            type="button"
+                        >
+                            Refresh data
+                        </button>
+                    </div>
+
+                    <div class="summary-grid">
+                        <article class="summary-card summary-card-dark">
+                            <span class="summary-label">Groups</span
+                            ><strong id="group-count">0</strong><small>shared spaces</small>
+                        </article>
+                        <article class="summary-card">
+                            <span class="summary-label">Tracked expenses</span
+                            ><strong id="expense-count">0</strong><small>across your groups</small>
+                        </article>
+                        <article class="summary-card summary-card-coral">
+                            <span class="summary-label">Base currency</span><strong>GBP</strong
+                            ><small>pounds sterling</small>
+                        </article>
+                    </div>
+
+                    <div class="content-grid">
+                        <section class="panel groups-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Shared spaces</p>
+                                    <h2>Your groups</h2>
+                                </div>
+                                <button
+                                    id="new-group-button"
+                                    class="icon-button"
+                                    type="button"
+                                    aria-label="Create a group"
+                                >
+                                    +
+                                </button>
+                            </div>
+                            <div
+                                id="groups-list"
+                                class="groups-list"
+                            >
+                                <div class="empty-state">Loading your groups...</div>
+                            </div>
+                        </section>
+
+                        <section class="panel activity-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Recent activity</p>
+                                    <h2>Expenses</h2>
+                                </div>
+                                <span
+                                    id="selected-group-label"
+                                    class="pill"
+                                    >Choose a group</span
+                                >
+                                <select
+                                    id="expense-filter"
+                                    class="expense-filter"
+                                    aria-label="Filter expenses"
+                                >
+                                    <option value="">Filter expenses</option>
+                                </select>
+                                <button
+                                    id="direct-expenses-button"
+                                    class="button button-light button-small"
+                                    type="button"
+                                >
+                                    Direct expenses
+                                </button>
+                            </div>
+                            <div
+                                id="expenses-list"
+                                class="expenses-list"
+                            >
+                                <div class="empty-state">Choose a group to see expenses.</div>
+                            </div>
+                            <button
+                                id="new-expense-button"
+                                class="button button-primary button-full"
+                                type="button"
+                            >
+                                Add expense
+                            </button>
+                        </section>
+                    </div>
+
+                    <section
+                        id="notifications-panel"
+                        class="panel notifications-panel hidden"
+                    >
+                        <div class="panel-heading">
+                            <div>
+                                <p class="eyebrow">Your inbox</p>
+                                <h2>Expense invitations</h2>
+                            </div>
+                            <span class="pill">Pending</span>
+                        </div>
+                        <div
+                            id="notifications-list"
+                            class="notifications-list"
+                        >
+                            <div class="empty-state">No pending invitations.</div>
+                        </div>
+                    </section>
+
+                    <div class="lower-grid">
+                        <section class="panel form-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Plan ahead</p>
+                                    <h2>New budget</h2>
+                                </div>
+                            </div>
+                            <form
+                                id="budget-form"
+                                class="compact-form"
+                            >
+                                <div class="field">
+                                    <label for="budget-name">Budget name</label
+                                    ><input
+                                        id="budget-name"
+                                        required
+                                        placeholder="Weekend away"
+                                    />
+                                </div>
+                                <div class="inline-fields">
+                                    <div class="field">
+                                        <label for="budget-limit">Limit</label
+                                        ><input
+                                            id="budget-limit"
+                                            type="number"
+                                            min="0.01"
+                                            step="0.01"
+                                            required
+                                            placeholder="250.00"
+                                        />
+                                    </div>
+                                    <div class="field">
+                                        <label for="budget-currency">Currency</label
+                                        ><input
+                                            id="budget-currency"
+                                            maxlength="3"
+                                            value="GBP"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                                <div class="inline-fields">
+                                    <div class="field">
+                                        <label for="budget-start">Starts</label
+                                        ><input
+                                            id="budget-start"
+                                            type="date"
+                                            required
+                                        />
+                                    </div>
+                                    <div class="field">
+                                        <label for="budget-end">Ends</label
+                                        ><input
+                                            id="budget-end"
+                                            type="date"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                                <button
+                                    class="button button-light button-full"
+                                    type="submit"
+                                >
+                                    Save budget
+                                </button>
+                                <p
+                                    id="budget-message"
+                                    class="form-message"
+                                    role="alert"
+                                ></p>
+                            </form>
+                        </section>
+
+                        <section class="panel form-panel converter-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Live rates</p>
+                                    <h2>Currency converter</h2>
+                                </div>
+                                <span class="rate-dot">●</span>
+                            </div>
+                            <form
+                                id="converter-form"
+                                class="compact-form"
+                            >
+                                <div class="field">
+                                    <label for="convert-amount">Amount</label
+                                    ><input
+                                        id="convert-amount"
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value="100"
+                                        required
+                                    />
+                                </div>
+                                <div class="inline-fields">
+                                    <div class="field">
+                                        <label for="convert-from">From</label
+                                        ><input
+                                            id="convert-from"
+                                            maxlength="3"
+                                            value="GBP"
+                                            required
+                                        />
+                                    </div>
+                                    <div class="field">
+                                        <label for="convert-to">To</label
+                                        ><input
+                                            id="convert-to"
+                                            maxlength="3"
+                                            value="EUR"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                                <button
+                                    class="button button-light button-full"
+                                    type="submit"
+                                >
+                                    Convert amount
+                                </button>
+                                <p
+                                    id="conversion-result"
+                                    class="conversion-result"
+                                >
+                                    Enter an amount to see the latest rate.
+                                </p>
+                            </form>
+                        </section>
+                    </div>
+                </section>
+            </main>
+            <div
+                id="toast"
+                class="toast"
+                role="status"
+            ></div>
+
+            <div
+                id="group-modal"
+                class="modal hidden"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="group-modal-title"
+            >
+                <div class="modal-card">
+                    <div class="panel-heading">
+                        <div>
+                            <p class="eyebrow">Shared space</p>
+                            <h2 id="group-modal-title">Create group</h2>
+                        </div>
+                        <button
+                            id="close-group-modal"
+                            class="icon-button icon-button-muted"
+                            type="button"
+                            aria-label="Close group form"
+                        >
+                            ×
+                        </button>
+                    </div>
+                    <form
+                        id="group-form"
+                        class="compact-form"
+                    >
+                        <div class="field">
+                            <label for="group-name">Group name</label
+                            ><input
+                                id="group-name"
+                                required
+                                placeholder="Flatmates"
+                            />
+                        </div>
+                        <div class="field">
+                            <label for="group-user-search">Find users by username</label
+                            ><input
+                                id="group-user-search"
+                                autocomplete="off"
+                                placeholder="Search username"
+                            />
+                        </div>
+                        <div
+                            id="group-user-results"
+                            class="user-search-results"
+                        ></div>
+                        <div
+                            id="group-selected-users"
+                            class="selected-users"
+                        ></div>
+                        <p
+                            id="group-message"
+                            class="form-message"
+                            role="alert"
+                        ></p>
+                        <button
+                            class="button button-primary button-full"
+                            type="submit"
+                        >
+                            Create group
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- This dialog keeps expense creation in the page while username search stays server-backed. -->
+            <div
+                id="expense-modal"
+                class="modal hidden"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="expense-modal-title"
+            >
+                <div class="modal-card">
+                    <div class="panel-heading">
+                        <div>
+                            <p class="eyebrow">Shared spending</p>
+                            <h2 id="expense-modal-title">Add expense</h2>
+                        </div>
+                        <button
+                            id="close-expense-modal"
+                            class="icon-button icon-button-muted"
+                            type="button"
+                            aria-label="Close expense form"
+                        >
+                            ×
+                        </button>
+                    </div>
+                    <form
+                        id="expense-form"
+                        class="compact-form"
+                    >
+                        <div
+                            class="expense-mode"
+                            role="tablist"
+                            aria-label="Expense type"
+                        >
+                            <button
+                                class="mode-button is-active"
+                                data-expense-mode="group"
+                                type="button"
+                            >
+                                Group expense
+                            </button>
+                            <button
+                                class="mode-button"
+                                data-expense-mode="direct"
+                                type="button"
+                            >
+                                Direct expense
+                            </button>
+                        </div>
+                        <div
+                            id="expense-group-fields"
+                            class="field"
+                        >
+                            <label for="expense-group">Add to group</label>
+                            <select
+                                id="expense-group"
+                                required
+                            ></select>
+                        </div>
+                        <div class="field">
+                            <label for="expense-description">Description</label
+                            ><input
+                                id="expense-description"
+                                required
+                                placeholder="Dinner at Lina's"
+                            />
+                        </div>
+                        <div class="inline-fields">
+                            <div class="field">
+                                <label for="expense-amount">Total</label
+                                ><input
+                                    id="expense-amount"
+                                    type="number"
+                                    min="0.01"
+                                    step="0.0001"
+                                    required
+                                    placeholder="120.00"
+                                />
+                            </div>
+                            <div class="field">
+                                <label for="expense-currency">Currency</label
+                                ><input
+                                    id="expense-currency"
+                                    maxlength="3"
+                                    value="GBP"
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <div
+                            id="expense-user-field"
+                            class="field"
+                        >
+                            <label for="expense-user-search">Find a username</label
+                            ><input
+                                id="expense-user-search"
+                                autocomplete="off"
+                                placeholder="Search username"
+                            />
+                        </div>
+                        <div
+                            id="expense-user-results"
+                            class="user-search-results"
+                        ></div>
+                        <p
+                            id="expense-user-hint"
+                            class="field-hint"
+                        >
+                            Search existing group members to split this expense.
+                        </p>
+                        <div
+                            id="expense-selected-users"
+                            class="selected-users"
+                        ></div>
+                        <p
+                            id="expense-message"
+                            class="form-message"
+                            role="alert"
+                        ></p>
+                        <button
+                            class="button button-primary button-full"
+                            type="submit"
+                        >
+                            Send expense invitations
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <script
+            src="/app.js"
+            defer
+        ></script>
+    </body>
+</html>
